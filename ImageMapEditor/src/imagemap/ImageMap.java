@@ -104,6 +104,10 @@ public class ImageMap extends JFrame implements ActionListener {
 		}; // to make fast escape from program without save prompt
 		frame.getRootPane().getActionMap().put("performWindowExit", performWindowExit);
 		frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(fastExit, "performWindowExit");
+		
+		// tabbing for several ImageMap preojects at the same time
+		JTabbedPane projects = new JTabbedPane();
+				
 
 		// menubar
 		JMenuBar menubar = new JMenuBar();
