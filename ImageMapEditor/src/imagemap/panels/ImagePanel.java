@@ -27,7 +27,8 @@ public class ImagePanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 1L;
 	private Image img = null;
-	private ImageMap parent;
+	private ImageMap frame;
+	private ImageMapProject parent;
 	private Vector<AbstractShape> shapeList = new Vector<AbstractShape>();
 	private Stack<AbstractStackAction> undoStack = new Stack<AbstractStackAction>();
 	private Stack<AbstractStackAction> redoStack = new Stack<AbstractStackAction>();
@@ -37,13 +38,16 @@ public class ImagePanel extends JPanel {
 	private String imagePath;
 	private String savePath;
 	private CustomHTMLDoc doc;
+	private boolean saved = true;
+	private boolean editing = false;
 
 	/**
 	 * constructor carrying parent component
 	 * 
 	 * @param parent
 	 */
-	public ImagePanel(ImageMap parent) {
+	public ImagePanel(ImageMap frame, ImageMapProject parent) {
+		this.frame = frame;
 		this.parent = parent;
 	}
 
@@ -74,7 +78,8 @@ public class ImagePanel extends JPanel {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		parent.updateRulers();
+		parent.getRulers()[0].repaint();
+		parent.getRulers()[1].repaint();
 	}
 
 	/**
@@ -456,7 +461,8 @@ public class ImagePanel extends JPanel {
 				break;
 			}
 			AbstractShape tmp;
-			if (shapeIndex < 0 && !(sa.getActionType() == AbstractStackAction.WIPE || sa.getActionType() == AbstractStackAction.SCALE)) {
+			if (shapeIndex < 0
+					&& !(sa.getActionType() == AbstractStackAction.WIPE || sa.getActionType() == AbstractStackAction.SCALE)) {
 				System.out.println("index fail");
 				return;
 			}
@@ -525,18 +531,21 @@ public class ImagePanel extends JPanel {
 
 			case AbstractStackAction.MOVE:
 				tmp = ((MoveStackAction) sa).getEditedShape().clone();
-				doc.getMap().removeSubElement(shapeList.remove(getShapeIndex(((MoveStackAction) sa).getOriginalShape())).getId());
+				doc.getMap().removeSubElement(
+						shapeList.remove(getShapeIndex(((MoveStackAction) sa).getOriginalShape())).getId());
 				shapeList.add(tmp);
 				addFilledElement(tmp);
 				break;
 
 			case AbstractStackAction.REMOVE:
-				doc.getMap().removeSubElement(shapeList.remove(getShapeIndex(((RemoveStackAction) sa).getEditedShape())).getId());
+				doc.getMap().removeSubElement(
+						shapeList.remove(getShapeIndex(((RemoveStackAction) sa).getEditedShape())).getId());
 				break;
 
 			case AbstractStackAction.RESIZE:
 				tmp = ((ResizeStackAction) sa).getEditedShape().clone();
-				doc.getMap().removeSubElement(shapeList.remove(getShapeIndex(((ResizeStackAction) sa).getOriginalShape())).getId());
+				doc.getMap().removeSubElement(
+						shapeList.remove(getShapeIndex(((ResizeStackAction) sa).getOriginalShape())).getId());
 				shapeList.add(tmp);
 				addFilledElement(tmp);
 				break;
@@ -570,15 +579,15 @@ public class ImagePanel extends JPanel {
 	private void updateTooltips() {
 		// undo part
 		if (!undoStack.isEmpty()) {
-			parent.getUndo().setToolTipText(undoStack.peek().getUndoDescription());
+			frame.getUndo().setToolTipText(undoStack.peek().getUndoDescription());
 		} else {
-			parent.getUndo().setToolTipText("Nothing to undo");
+			frame.getUndo().setToolTipText("Nothing to undo");
 		}
 		// redo part
 		if (!redoStack.isEmpty()) {
-			parent.getRedo().setToolTipText(redoStack.peek().getRedoDescription());
+			frame.getRedo().setToolTipText(redoStack.peek().getRedoDescription());
 		} else {
-			parent.getRedo().setToolTipText("Nothing to redo");
+			frame.getRedo().setToolTipText("Nothing to redo");
 		}
 	}
 
@@ -738,6 +747,38 @@ public class ImagePanel extends JPanel {
 	 */
 	public CustomHTMLDoc getDoc() {
 		return doc;
+	}
+
+	/**
+	 * 
+	 * @return whether panel has been saved yet
+	 */
+	public boolean isSaved() {
+		return saved;
+	}
+
+	/**
+	 * 
+	 * @return whether panel is currently being edited
+	 */
+	public boolean isEditing() {
+		return editing;
+	}
+
+	/**
+	 * @param saved
+	 *            the saved state to set
+	 */
+	public void setSaved(boolean saved) {
+		this.saved = saved;
+	}
+
+	/**
+	 * @param editing
+	 *            the editing state to set
+	 */
+	public void setEditing(boolean editing) {
+		this.editing = editing;
 	}
 
 }
