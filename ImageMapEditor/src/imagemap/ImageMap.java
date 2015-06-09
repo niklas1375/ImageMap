@@ -12,13 +12,12 @@ import java.awt.*;
 import java.awt.datatransfer.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.*;
+import java.util.HashMap;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.*;
+import javax.swing.plaf.metal.MetalTabbedPaneUI;
 
 /**
  * @author Niklas Miroll
@@ -34,13 +33,10 @@ public class ImageMap extends JFrame implements ActionListener {
 	private static ImageMap.MouseController mc;
 	private static ImageMap.MouseMotionController mmc;
 	private static WindowController wc;
-	private ImagePanel panel;
-	private HTMLPanel html;
-	private JTextPane htmlLines;
-	private PreviewPanel htmlPreview;
-	private JScrollPane scrollableImage;
-	private JScrollPane scrollableText;
-	private JScrollPane scrollableWeb;
+	private ImageMapProject currentProject;
+	private JTabbedPane projects;
+	private HashMap<String, ImageMapProject> projectObjects = new HashMap<String, ImageMapProject>();
+	private JButton copyClip_button;
 	private ButtonGroup group;
 	private JMenuItem undo;
 	private JMenuItem redo;
@@ -51,15 +47,10 @@ public class ImageMap extends JFrame implements ActionListener {
 	private Point temp;
 	private AbstractShape startShape;
 	private AbstractShape endShape;
-	private Rule columnView;
-	private Rule rowView;
-	private JToggleButton isMetric;
 	private int current_toggle;
 	private int startId;
 	private JFileChooser fc = new JFileChooser();
-	private boolean editing;
 	private boolean empty = true;
-	private boolean saved = true;
 	private boolean inside = false;
 	private boolean dragging = false;
 	private boolean moving = false;
@@ -91,7 +82,6 @@ public class ImageMap extends JFrame implements ActionListener {
 	 */
 	private void createGUI() {
 		// general declarations and instantiations
-		editing = false;
 		KeyStroke fastExit = KeyStroke.getKeyStroke('E', java.awt.event.InputEvent.CTRL_DOWN_MASK
 				| java.awt.event.InputEvent.SHIFT_DOWN_MASK);
 		Action performWindowExit = new AbstractAction("FastExit") {
@@ -104,6 +94,9 @@ public class ImageMap extends JFrame implements ActionListener {
 		}; // to make fast escape from program without save prompt
 		frame.getRootPane().getActionMap().put("performWindowExit", performWindowExit);
 		frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(fastExit, "performWindowExit");
+		mc = new ImageMap.MouseController();
+		mmc = new ImageMap.MouseMotionController();
+		currentProject = null;
 
 		// menubar
 		JMenuBar menubar = new JMenuBar();
@@ -191,7 +184,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		// toolbar
 		group = new ButtonGroup();
 		JToolBar toolbar = new JToolBar("Tools", JToolBar.HORIZONTAL);
-		JButton copyClip_button = new JButton("Copy to Clipboard");
+		copyClip_button = new JButton("Copy to Clipboard");
 		ImageIcon rectIcon = createImageIcon("images/rectangle.png");
 		ImageIcon circleIcon = createImageIcon("images/circle.png");
 		ImageIcon polyIcon = createImageIcon("images/polygon.png");
@@ -234,135 +227,22 @@ public class ImageMap extends JFrame implements ActionListener {
 		toolbar.addSeparator();
 		toolbar.add(copyClip_button);
 
-		// ImagePanel stuff
-		panel = new ImagePanel(frame);
-		mc = new ImageMap.MouseController();
-		mmc = new ImageMap.MouseMotionController();
-		panel.addMouseListener(mc);
-		panel.addMouseMotionListener(mmc);
-		scrollableImage = new JScrollPane();
-		scrollableImage.add(panel);
-		scrollableImage.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
-		scrollableImage.setViewportView(panel);
-		KeyStroke keyExit = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-		Action performExit = new AbstractAction("Exit") {
-			private static final long serialVersionUID = 1L;
+		// tabbing for several ImageMap projects at the same time
+		projects = new JTabbedPane();
+		projects.setTabPlacement(SwingConstants.BOTTOM);
+		projects.setUI(new CustomTabbedPaneUI());
+		projects.addChangeListener(new ChangeListener() {
 
-			public void actionPerformed(ActionEvent e) {
-				if (editing) {
-					editing = false;
-				}
-			}
-		};
-		panel.getActionMap().put("performExit", performExit);
-		panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyExit, "performExit");
-		columnView = new Rule(Rule.HORIZONTAL, true);
-		columnView.setPreferredHeight(35);
-		rowView = new Rule(Rule.VERTICAL, true);
-		rowView.setPreferredWidth(35);
-		scrollableImage.setColumnHeaderView(columnView);
-		scrollableImage.setRowHeaderView(rowView);
-		JPanel buttonCorner = new JPanel(); //use FlowLayout
-		isMetric = new JToggleButton("cm", true);
-		isMetric.setFont(new Font("SansSerif", Font.PLAIN, 11));
-		isMetric.setMargin(new Insets(2,2,2,2));
-		isMetric.addActionListener(this);
-		isMetric.setName("corner");
-		buttonCorner.add(isMetric);
-		scrollableImage.setCorner(JScrollPane.UPPER_LEFT_CORNER, buttonCorner);
-
-		// HTMLPanel stuff
-		StyleContext sc = new StyleContext();
-		final DefaultStyledDocument doc = new DefaultStyledDocument(sc);
-		html = new HTMLPanel(doc);
-		scrollableText = new JScrollPane();
-		scrollableText.add(html);
-		scrollableText.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
-		scrollableText.setViewportView(html);
-		htmlLines = new JTextPane();
-		htmlLines.setBackground(Color.lightGray);
-		htmlLines.setEditable(false);
-		scrollableText.add(htmlLines);
-		scrollableText.setRowHeaderView(htmlLines);
-
-		// preview stuff
-		htmlPreview = new PreviewPanel(panel);
-		scrollableWeb = new JScrollPane();
-		scrollableWeb.add(htmlPreview);
-		scrollableWeb.setPreferredSize(new Dimension(this.getWidth(), this.getHeight()));
-		scrollableWeb.setViewportView(htmlPreview);
-
-		// tab stuff
-		JTabbedPane tabs = new JTabbedPane();
-		tabs.addTab("Image", scrollableImage);
-		tabs.addTab("HTML", scrollableText);
-		tabs.addTab("Preview", scrollableWeb);
-		tabs.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				if (!tabs.getTitleAt(tabs.getSelectedIndex()).equals("Image")) {
-					mouse_position.setText("");
-				}
-				if (tabs.getTitleAt(tabs.getSelectedIndex()).equals("Preview")) {
-					htmlPreview.setPanel(panel);
-				}
-				if (tabs.getTitleAt(tabs.getSelectedIndex()).equals("HTML")) {
-					Image img = panel.getImg();
-					if (img != null) {
-						String htmlcode = panel.getDoc().toString();
-						html.setText(htmlcode);
-						htmlPreview.setText(htmlcode);
-						htmlLines.setText(html.getLineNumbers());
-						html.setPreferredSize(new Dimension(html.getWidth(), html.getHeight()));
-						html.revalidate();
-						htmlPreview.revalidate();
-						javax.swing.SwingUtilities.invokeLater(new Runnable() {
-							public void run() {
-								scrollableWeb.getHorizontalScrollBar().setValue(0);
-								scrollableWeb.getVerticalScrollBar().setValue(0);
-							}
-						});
+				if (!empty && projects.getTabCount() != 0) {
+					if (!projects.getTitleAt(projects.getSelectedIndex()).equals(currentProject.getName())) {
+						path.setText(currentProject.getImagePanel().getSavePath());
+						currentProject = (ImageMapProject) projects.getSelectedComponent();
 					}
-					copyClip_button.setVisible(true);
-				} else {
-					copyClip_button.setVisible(false);
 				}
 			}
 		});
-		KeyStroke keyTabForward = KeyStroke.getKeyStroke("ctrl TAB");
-		KeyStroke keyTabBackward = KeyStroke.getKeyStroke("ctrl shift TAB");
-		Set<AWTKeyStroke> forwardKeys = new HashSet<AWTKeyStroke>(
-				tabs.getFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS));
-		forwardKeys.remove(keyTabForward);
-		tabs.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, forwardKeys);
-		Set<AWTKeyStroke> backwardKeys = new HashSet<AWTKeyStroke>(
-				tabs.getFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS));
-		backwardKeys.remove(keyTabBackward);
-		tabs.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, backwardKeys);
-		Action tabForward = new AbstractAction("TabForward") {
-			private static final long serialVersionUID = 1L;
-
-			public void actionPerformed(ActionEvent e) {
-				tabs.setSelectedIndex((tabs.getSelectedIndex() + 1) % 3);
-				tabs.getSelectedComponent().requestFocusInWindow();
-			}
-		};
-		Action tabBackward = new AbstractAction("TabBackward") {
-			private static final long serialVersionUID = 1L;
-
-			public void actionPerformed(ActionEvent e) {
-				if (tabs.getSelectedIndex() == 0) {
-					tabs.setSelectedIndex(2);
-				} else {
-					tabs.setSelectedIndex(tabs.getSelectedIndex() - 1);
-				}
-				tabs.getSelectedComponent().requestFocusInWindow();
-			}
-		};
-		tabs.getActionMap().put("tabForward", tabForward);
-		tabs.getActionMap().put("tabBackward", tabBackward);
-		tabs.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(keyTabForward, "tabForward");
-		tabs.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(keyTabBackward, "tabBackward");
 
 		// status bar
 		JPanel status = new JPanel(new BorderLayout());
@@ -386,10 +266,9 @@ public class ImageMap extends JFrame implements ActionListener {
 		frame.setLayout(new BorderLayout());
 		frame.setJMenuBar(menubar);
 		frame.add(toolbar, BorderLayout.NORTH);
-		frame.add(tabs, BorderLayout.CENTER);
+		frame.add(projects, BorderLayout.CENTER);
 		frame.add(status, BorderLayout.SOUTH);
 		frame.setVisible(true);
-		tabs.getComponentAt(0).requestFocusInWindow();
 	} // end of createGUI()
 
 	/**
@@ -412,45 +291,47 @@ public class ImageMap extends JFrame implements ActionListener {
 			break;
 
 		case "import":
-			if (panel.getImg() != null) {
-				ShapeImporter si = new ShapeImporter(this, panel.getImg(), panel);
+			if (currentProject.getImagePanel().getImg() != null) {
+				ShapeImporter si = new ShapeImporter(this, currentProject.getImagePanel().getImg(),
+						currentProject.getImagePanel());
 				si.setVisible(true);
 			}
 			break;
 
 		case "clear":
-			panel.doClear();
+			currentProject.getImagePanel().doClear();
 			break;
 
 		case "scale":
-			if (panel.getImg() != null) {
-				ImageResizer ir = new ImageResizer(this, panel.getImg(), panel);
+			if (currentProject.getImagePanel().getImg() != null) {
+				ImageResizer ir = new ImageResizer(this, currentProject.getImagePanel().getImg(),
+						currentProject.getImagePanel());
 				ir.setVisible(true);
 			}
 			break;
 
 		case "copy":
-			panel.doCopy(null);
+			currentProject.getImagePanel().doCopy(null);
 			break;
 
 		case "paste":
-			panel.doPaste();
+			currentProject.getImagePanel().doPaste();
 			break;
 
 		case "cut":
-			panel.doCut(null);
+			currentProject.getImagePanel().doCut(null);
 			break;
 
 		case "redo":
-			panel.doRedo();
+			currentProject.getImagePanel().doRedo();
 			break;
 
 		case "undo":
-			panel.doUndo();
+			currentProject.getImagePanel().doUndo();
 			break;
 
 		case "delete":
-			panel.doDelete(null);
+			currentProject.getImagePanel().doDelete(null);
 			break;
 
 		case "about":
@@ -492,10 +373,11 @@ public class ImageMap extends JFrame implements ActionListener {
 		case "motiflf":
 			doLF(name);
 			break;
-			
+
 		case "corner":
-			columnView.setIsMetric(isMetric.isSelected());
-			rowView.setIsMetric(isMetric.isSelected());
+			JToggleButton isMetric = currentProject.getMetric();
+			currentProject.getRulers()[1].setIsMetric(isMetric.isSelected());
+			currentProject.getRulers()[0].setIsMetric(isMetric.isSelected());
 			if (isMetric.isSelected()) {
 				isMetric.setText("cm");
 			} else {
@@ -519,7 +401,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	 * copy HTML to clipboard
 	 */
 	private void doClip() {
-		String toclip = html.getText();
+		String toclip = currentProject.getHTMLPanel().getText();
 		StringSelection strSel = new StringSelection(toclip);
 		Clipboard clip = Toolkit.getDefaultToolkit().getSystemClipboard();
 		clip.setContents(strSel, null);
@@ -539,59 +421,17 @@ public class ImageMap extends JFrame implements ActionListener {
 	private void doNew() {
 		FileNameExtensionFilter filter = new FileNameExtensionFilter("Bilder", "gif", "png", "jpg", "jpeg", "bmp");
 		fc.setFileFilter(filter);
-		if (!saved || editing) {
-			int retVal = JOptionPane.showConfirmDialog(this,
-					"Do you want to discard unsaved changes and open a new image?");
-			if (retVal != JOptionPane.YES_OPTION) {
-				int returnVal = fc.showOpenDialog(this);
-				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File file = fc.getSelectedFile();
-					try {
-						panel.die();
-						panel.setImagePath(file.getAbsolutePath());
-						panel.setImg((Image) ImageIO.read(file));
-						panel.setPreferredSize(new Dimension(panel.getWidth(), panel.getHeight()));
-						rowView.setPreferredHeight(panel.getImg().getHeight(null));
-						rowView.repaint();
-						columnView.setPreferredWidth(panel.getImg().getWidth(null));
-						columnView.repaint();
-						panel.revalidate();
-						html.setText("");
-						shapeImport.setEnabled(true);
-						scale.setEnabled(true);
-						empty = false;
-					} catch (Exception e) {
-						JOptionPane.showMessageDialog(frame, "Image could not be loaded.");
-					}
-				} else {
-					JOptionPane.showMessageDialog(frame, "File could not be opened.");
-				}
+		int returnVal = fc.showOpenDialog(this);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File file = fc.getSelectedFile();
+			try {
+				addProject(file);
+			} catch (Exception e) {
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(frame, "Image could not be loaded.");
 			}
 		} else {
-			int returnVal = fc.showOpenDialog(this);
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
-				try {
-					panel.die();
-					panel.setImagePath(file.getAbsolutePath());
-					panel.setImg(ImageIO.read(file));
-					panel.setPreferredSize(new Dimension(panel.getWidth(), panel.getHeight()));
-					rowView.setPreferredHeight(panel.getImg().getHeight(null));
-					rowView.repaint();
-					columnView.setPreferredWidth(panel.getImg().getWidth(null));
-					columnView.repaint();
-					panel.revalidate();
-					html.setText("");
-					shapeImport.setEnabled(true);
-					scale.setEnabled(true);
-					empty = false;
-				} catch (Exception e) {
-					e.printStackTrace();
-					JOptionPane.showMessageDialog(frame, "Image could not be loaded.");
-				}
-			} else {
-				JOptionPane.showMessageDialog(frame, "File could not be opened.");
-			}
+			JOptionPane.showMessageDialog(frame, "File could not be opened.");
 		}
 	} // end of doNew()
 
@@ -599,10 +439,13 @@ public class ImageMap extends JFrame implements ActionListener {
 	 * save imagemap to html
 	 */
 	private void doSave() {
-		Image img = panel.getImg();
-		if (img != null) {
-			int retVal = 0;
-			if (editing) {
+		ImagePanel panel = null;
+		if (currentProject != null) {
+			panel = currentProject.getImagePanel();
+		}
+		if (panel != null) {
+			int retVal = JOptionPane.YES_OPTION;
+			if (panel.isEditing()) {
 				retVal = JOptionPane.showConfirmDialog(this, "You are currently editing a shape. Do you want to "
 						+ "discard changes and save the finished shapes?");
 			}
@@ -610,7 +453,7 @@ public class ImageMap extends JFrame implements ActionListener {
 				FileNameExtensionFilter filter = new FileNameExtensionFilter("Web", "html", "htm", "xhtml");
 				fc.setFileFilter(filter);
 				temp = null;
-				editing = false;
+				panel.setEditing(false);
 				String html = panel.getDoc().toString();
 				fc.setSelectedFile(new File("imagemap.html"));
 				int returnVal = fc.showSaveDialog(this);
@@ -623,6 +466,7 @@ public class ImageMap extends JFrame implements ActionListener {
 						bw.close();
 						fos.close();
 						panel.setSavePath(content.getAbsolutePath());
+						panel.setSaved(true);
 						path.setText("Save path: " + content.getAbsolutePath());
 						JOptionPane.showMessageDialog(this,
 								"Remember changing source of picture according to the webserver!", "Reminder",
@@ -647,7 +491,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	 * @param s
 	 */
 	private void doEdit(AbstractShape s) {
-		DetailEditor de = new DetailEditor(s, panel.getDoc(), this);
+		DetailEditor de = new DetailEditor(s, currentProject.getImagePanel().getDoc(), this);
 		de.setVisible(true);
 	} // end of doEdit(Shape s)
 
@@ -691,7 +535,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	 * @param type
 	 */
 	private void doToggle(int type) {
-		if (editing && current_toggle != type) {
+		if (currentProject.getImagePanel().isEditing() && current_toggle != type) {
 			int returnVal = JOptionPane.showConfirmDialog(this, "You are currently editing a shape "
 					+ "of another type. Do you want to switch the tool and discard changes?");
 			if (returnVal == JOptionPane.YES_OPTION) {
@@ -730,13 +574,63 @@ public class ImageMap extends JFrame implements ActionListener {
 			return null;
 		}
 	}
-	
+
+	private void addProject(File file) throws IOException {
+		String name = JOptionPane.showInputDialog(this, "How do you want to name the new project?");
+		ImageMapProject proj = new ImageMapProject(name, file, this);
+		projects.add(name, proj);
+		projects.setSelectedComponent(proj);
+		projectObjects.put(name, proj);
+		currentProject = proj;
+		shapeImport.setEnabled(true);
+		scale.setEnabled(true);
+		empty = false;
+	}
+
 	/**
-	 * update rulers according to content of imagepanel
+	 * @return the undo
 	 */
-	public void updateRulers() {
-		rowView.repaint();
-		columnView.repaint();
+	public JMenuItem getUndo() {
+		return undo;
+	}
+
+	/**
+	 * @return the redo
+	 */
+	public JMenuItem getRedo() {
+		return redo;
+	}
+
+	/**
+	 * 
+	 * @return the mouse controller
+	 */
+	public MouseController getMc() {
+		return mc;
+	}
+
+	/**
+	 * 
+	 * @return the mouse motion controller
+	 */
+	public MouseMotionController getMmc() {
+		return mmc;
+	}
+
+	/**
+	 * 
+	 * @return copyclip button
+	 */
+	public JButton getClip_button() {
+		return copyClip_button;
+	}
+
+	/**
+	 * 
+	 * @return mouse_position
+	 */
+	public JLabel getMouse_position() {
+		return mouse_position;
 	}
 
 	/**
@@ -750,7 +644,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		@Override
 		public void mouseReleased(MouseEvent e) {
-			if (panel.getImg() != null) {
+			if (currentProject.getImagePanel().getImg() != null) {
 				if (SwingUtilities.isRightMouseButton(e)) {
 					handleRightClick(e);
 				} else {
@@ -764,7 +658,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		@Override
 		public void mousePressed(MouseEvent e) {
-			if (panel.isInside(e.getPoint())) {
+			if (currentProject.getImagePanel().isInside(e.getPoint())) {
 				inside = true;
 			} else {
 				inside = false;
@@ -794,13 +688,13 @@ public class ImageMap extends JFrame implements ActionListener {
 		 * handle end of creating circle or rectangle Shape
 		 */
 		private void handleDrag() {
-			endShape = panel.getDraggedShape();
-			panel.setDraggedShape(null);
+			endShape = currentProject.getImagePanel().getDraggedShape();
+			currentProject.getImagePanel().setDraggedShape(null);
 			dragging = false;
 			moving = false;
 			resizing = false;
 			temp = null;
-			panel.addShape(endShape);
+			currentProject.getImagePanel().addShape(endShape);
 			startShape = null;
 			endShape = null;
 		}
@@ -812,8 +706,8 @@ public class ImageMap extends JFrame implements ActionListener {
 			dragging = false;
 			moving = false;
 			resizing = false;
-			panel.endEditing(actionType, startShape, endShape);
-			panel.getDoc().getMap().getSubElements().get(startId).updateCoords(endShape);
+			currentProject.getImagePanel().endEditing(actionType, startShape, endShape);
+			currentProject.getImagePanel().getDoc().getMap().getSubElements().get(startId).updateCoords(endShape);
 			startShape = null;
 			endShape = null;
 		}
@@ -845,12 +739,13 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		private void doMouse(MouseEvent e) {
 			if (e.getClickCount() == 1) {
-				if (panel.isInside(e.getPoint())) {
-					panel.setCurrentShape(panel.whichShape(e.getPoint()));
+				if (currentProject.getImagePanel().isInside(e.getPoint())) {
+					currentProject.getImagePanel().setCurrentShape(
+							currentProject.getImagePanel().whichShape(e.getPoint()));
 				}
 			} else if (e.getClickCount() == 2) {
-				if (panel.isInside(e.getPoint())) {
-					doEdit(panel.whichShape(e.getPoint()));
+				if (currentProject.getImagePanel().isInside(e.getPoint())) {
+					doEdit(currentProject.getImagePanel().whichShape(e.getPoint()));
 				}
 			}
 		}
@@ -861,13 +756,14 @@ public class ImageMap extends JFrame implements ActionListener {
 		 * @param e
 		 */
 		private void doPoly(MouseEvent e) {
-			if (!editing) {
+			ImagePanel panel = currentProject.getImagePanel();
+			if (!panel.isEditing()) {
 				panel.addShape(new PolygonShape(e.getPoint()));
-				editing = true;
+				panel.setEditing(true);
 			} else {
 				int clicks = e.getClickCount();
 				if (clicks == 2) {
-					editing = false;
+					panel.setEditing(false);
 					((PolygonShape) panel.getShapeList().lastElement()).addPolyPoint(e.getPoint());
 					panel.repaint();
 				}
@@ -885,9 +781,9 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		private void handleRightClick(MouseEvent e) {
 			Point p = e.getPoint();
-			boolean isInside = panel.isInside(p);
+			boolean isInside = currentProject.getImagePanel().isInside(p);
 			if (isInside) {
-				AbstractShape s = panel.whichShape(p);
+				AbstractShape s = currentProject.getImagePanel().whichShape(p);
 				// open right-click-menu with options: edit information,
 				// copy,
 				// cut, delete
@@ -903,24 +799,24 @@ public class ImageMap extends JFrame implements ActionListener {
 				copy.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						panel.setCurrentShape(s);
-						panel.doCopy(null);
+						currentProject.getImagePanel().setCurrentShape(s);
+						currentProject.getImagePanel().doCopy(null);
 					}
 				});
 				JMenuItem cut = new JMenuItem("Cut");
 				cut.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						panel.setCurrentShape(s);
-						panel.doCut(null);
+						currentProject.getImagePanel().setCurrentShape(s);
+						currentProject.getImagePanel().doCut(null);
 					}
 				});
 				JMenuItem delete = new JMenuItem("Delete");
 				delete.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						panel.setCurrentShape(s);
-						panel.doDelete(null);
+						currentProject.getImagePanel().setCurrentShape(s);
+						currentProject.getImagePanel().doDelete(null);
 					}
 				});
 				popupout.add(edit);
@@ -936,7 +832,7 @@ public class ImageMap extends JFrame implements ActionListener {
 				paste.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						panel.doPaste(p);
+						currentProject.getImagePanel().doPaste(p);
 					}
 				});
 				popupout.add(paste);
@@ -957,12 +853,12 @@ public class ImageMap extends JFrame implements ActionListener {
 		@Override
 		public void mouseDragged(MouseEvent e) {
 			Point p = e.getPoint();
-			AbstractShape shape = panel.isInsideRect(p);
+			AbstractShape shape = currentProject.getImagePanel().isInsideRect(p);
 			setCursorStatus(p);
 			if (shape == null) {
 				if (inside) {
 					if (current_toggle == TYPE_MOUSE) {
-						AbstractShape tmp = panel.whichShape(p);
+						AbstractShape tmp = currentProject.getImagePanel().whichShape(p);
 						if (startShape == null) {
 							startShape = tmp.clone();
 							startId = 0 + tmp.getId();
@@ -973,7 +869,7 @@ public class ImageMap extends JFrame implements ActionListener {
 						temp = p;
 						tmp.move(xdir, ydir);
 						endShape = tmp.clone();
-						panel.repaint();
+						currentProject.getImagePanel().repaint();
 					}
 				} else {
 					if (current_toggle == AbstractShape.TYPE_RECT) {
@@ -996,7 +892,7 @@ public class ImageMap extends JFrame implements ActionListener {
 					temp = p;
 					shape.movePoint(p, xdir, ydir);
 					endShape = shape.clone();
-					panel.repaint();
+					currentProject.getImagePanel().repaint();
 				}
 			}
 		}
@@ -1014,9 +910,9 @@ public class ImageMap extends JFrame implements ActionListener {
 			int r = Math.abs((int) temp.getX() - x);
 			int r1 = Math.abs((int) temp.getY() - y);
 			if (r > r1) {
-				panel.setDraggedShape(new CircleShape(center_tmp, r1));
+				currentProject.getImagePanel().setDraggedShape(new CircleShape(center_tmp, r1));
 			} else {
-				panel.setDraggedShape(new CircleShape(center_tmp, r));
+				currentProject.getImagePanel().setDraggedShape(new CircleShape(center_tmp, r));
 			}
 		}
 
@@ -1031,7 +927,7 @@ public class ImageMap extends JFrame implements ActionListener {
 			int y = (int) temp.getY();
 			int x1 = (int) p.getX();
 			int y1 = (int) p.getY();
-			panel.setDraggedShape(new RectangleShape(x, y, x1, y1));
+			currentProject.getImagePanel().setDraggedShape(new RectangleShape(x, y, x1, y1));
 		}
 
 		/**
@@ -1040,12 +936,12 @@ public class ImageMap extends JFrame implements ActionListener {
 		@Override
 		public void mouseMoved(MouseEvent e) {
 			Point p = e.getPoint();
-			AbstractShape shape = panel.isInsideRect(p);
+			AbstractShape shape = currentProject.getImagePanel().isInsideRect(p);
 			setCursorStatus(p);
 			if (shape != null && current_toggle == TYPE_MOUSE) {
 				Cursor cursor = Cursor.getPredefinedCursor(shape.getResizeCursor(p));
 				setCursor(cursor);
-			} else if (panel.isInside(p) && current_toggle == TYPE_MOUSE) {
+			} else if (currentProject.getImagePanel().isInside(p) && current_toggle == TYPE_MOUSE) {
 				Cursor cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
 				setCursor(cursor);
 			} else {
@@ -1086,17 +982,107 @@ public class ImageMap extends JFrame implements ActionListener {
 	} // end of inner class WindowController
 
 	/**
-	 * @return the undo
+	 * 
+	 * @author Niklas Miroll
+	 *
 	 */
-	public JMenuItem getUndo() {
-		return undo;
-	}
+	private class CustomTabbedPaneUI extends MetalTabbedPaneUI {
+		private Rectangle xRect;
 
-	/**
-	 * @return the redo
-	 */
-	public JMenuItem getRedo() {
-		return redo;
+		/**
+		 * installLIsteners method
+		 */
+		protected void installListeners() {
+			super.installListeners();
+			tabPane.addMouseListener(new MyMouseHandler());
+		}
+
+		/**
+		 * paintTab method to paint tab with cross for closing
+		 */
+		protected void paintTab(Graphics g, int tabPlacement, Rectangle[] rects, int tabIndex, Rectangle iconRect,
+				Rectangle textRect) {
+			super.paintTab(g, tabPlacement, rects, tabIndex, iconRect, textRect);
+
+			Font f = g.getFont();
+			g.setFont(new Font("Arial", Font.BOLD, 10));
+			FontMetrics fm = g.getFontMetrics(g.getFont());
+			int charWidth = fm.charWidth('x');
+			int maxAscent = fm.getMaxAscent();
+			g.drawString("x", textRect.x + textRect.width + 3, textRect.y + textRect.height - 4);
+			g.drawRect(textRect.x + textRect.width + 1, textRect.y + textRect.height - 1 - maxAscent, charWidth + 2,
+					maxAscent - 1);
+			xRect = new Rectangle(textRect.x + textRect.width - 5, textRect.y + textRect.height - maxAscent,
+					charWidth + 2, maxAscent - 1);
+			g.setFont(f);
+		}
+
+		/**
+		 * class to handle mouse clicks in the closing rectangle
+		 * 
+		 * @author Joris Van den Bogaert, Niklas Miroll
+		 *
+		 */
+		public class MyMouseHandler extends MouseAdapter {
+			public void mousePressed(MouseEvent e) {
+				if (xRect.contains(e.getPoint())) {
+					int tabIndex = tabForCoordinate(projects, e.getX(), e.getY());
+					ImageMapProject proj = (ImageMapProject) projects.getComponentAt(tabIndex);
+					if (proj.getImagePanel().isEditing() || !proj.getImagePanel().isSaved()) {
+						int retVal = JOptionPane.showConfirmDialog(frame, "You are currently editing this project "
+								+ "or haven't saved it yet.\nDo you want to save before closing?", "Confirm action",
+								JOptionPane.OK_CANCEL_OPTION);
+						switch (retVal) {
+						case JOptionPane.YES_OPTION:
+							kill(tabIndex);
+							break;
+
+						case JOptionPane.NO_OPTION:
+							kill(tabIndex);
+							break;
+
+						default:
+							break;
+						}
+					} else {
+						kill(tabIndex);
+					}
+				}
+			}
+
+			/**
+			 * kill tab
+			 * 
+			 * @param tabIndex
+			 */
+			private void kill(int tabIndex) {
+				projectObjects.remove(projects.getTitleAt(tabIndex));
+				projects.remove(tabIndex);
+				if (projects.getTabCount() == 0) {
+					resetToInit();
+				} else {
+					currentProject = (ImageMapProject) projects.getSelectedComponent();
+				}
+			}
+			
+			/**
+			 * reset ImageMapEditor to initial status after closing of last tab
+			 */
+			private void resetToInit() {
+				currentProject = null;
+				empty = true;
+				inside = false;
+				dragging = false;
+				moving = false;
+				resizing = false;
+				fastClose = false;
+				temp = null;
+				startShape = null;
+				endShape = null;
+				mouse_position.setText("   ");
+				path.setText("");
+			}
+		}
 	}
 
 } // end of class ImageMap
