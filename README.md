@@ -12,4 +12,3 @@ ImageMaps including images can be scaled to the users preference.
 
 © 2015 by Niklas Miroll
 (Might contain copyright content of others. Stated if this is the case.)
->>>>>>> 629523136320aaa24ddfa50d95787aa3a3671248
