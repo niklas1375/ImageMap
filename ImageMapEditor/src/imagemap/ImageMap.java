@@ -1009,8 +1009,8 @@ public class ImageMap extends JFrame implements ActionListener {
 			FontMetrics fm = g.getFontMetrics(g.getFont());
 			int charWidth = fm.charWidth('x');
 			int maxAscent = fm.getMaxAscent();
-			g.drawString("x", textRect.x + textRect.width - 3, textRect.y + textRect.height - 3);
-			g.drawRect(textRect.x + textRect.width - 5, textRect.y + textRect.height - maxAscent, charWidth + 2,
+			g.drawString("x", textRect.x + textRect.width + 3, textRect.y + textRect.height - 4);
+			g.drawRect(textRect.x + textRect.width + 1, textRect.y + textRect.height - 1 - maxAscent, charWidth + 2,
 					maxAscent - 1);
 			xRect = new Rectangle(textRect.x + textRect.width - 5, textRect.y + textRect.height - maxAscent,
 					charWidth + 2, maxAscent - 1);
