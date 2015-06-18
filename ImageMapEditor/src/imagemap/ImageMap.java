@@ -36,6 +36,8 @@ public class ImageMap extends JFrame implements ActionListener {
 	private ImageMapProject currentProject;
 	private JTabbedPane projects;
 	private HashMap<String, ImageMapProject> projectObjects = new HashMap<String, ImageMapProject>();
+	private JButton undoButton;
+	private JButton redoButton;
 	private JButton copyClip_button;
 	private ButtonGroup group;
 	private JMenuItem undo;
@@ -139,9 +141,11 @@ public class ImageMap extends JFrame implements ActionListener {
 		edit.add(undo).setAccelerator(KeyStroke.getKeyStroke('Z', menuShortcutKeyMask));
 		undo.addActionListener(this);
 		undo.setName("undo");
+		undo.setEnabled(false);
 		edit.add(redo).setAccelerator(KeyStroke.getKeyStroke('Y', menuShortcutKeyMask));
 		redo.addActionListener(this);
 		redo.setName("redo");
+		redo.setEnabled(false);
 		edit.addSeparator();
 		edit.add(clear).addActionListener(this);
 		clear.setName("clear");
@@ -189,6 +193,8 @@ public class ImageMap extends JFrame implements ActionListener {
 		ImageIcon circleIcon = createImageIcon("images/circle.png");
 		ImageIcon polyIcon = createImageIcon("images/polygon.png");
 		ImageIcon mouseIcon = createImageIcon("images/cursor.png");
+		ImageIcon undoIcon = createImageIcon("images/undo.png");
+		ImageIcon redoIcon = createImageIcon("images/redo.png");
 		JToggleButton rectangle_button = new JToggleButton(rectIcon);
 		JToggleButton circle_button = new JToggleButton(circleIcon);
 		JToggleButton polygon_button = new JToggleButton(polyIcon);
@@ -207,6 +213,14 @@ public class ImageMap extends JFrame implements ActionListener {
 		copyClip_button.setVisible(false);
 		copyClip_button.addActionListener(this);
 		copyClip_button.setName("clip");
+		undoButton = new JButton(undoIcon);
+		undoButton.setEnabled(false);
+		undoButton.addActionListener(this);
+		undoButton.setName("undo");
+		redoButton = new JButton(redoIcon);
+		redoButton.setEnabled(false);
+		redoButton.addActionListener(this);
+		redoButton.setName("redo");
 		toolbar.add(rectangle_button);
 		rectangle_button.setName("rect_button");
 		rectangle_button.setActionCommand("" + AbstractShape.TYPE_RECT);
@@ -225,6 +239,8 @@ public class ImageMap extends JFrame implements ActionListener {
 		mouse_button.setActionCommand("" + TYPE_MOUSE);
 		mouse_button.setName("mouse_button");
 		toolbar.addSeparator();
+		toolbar.add(undoButton);
+		toolbar.add(redoButton);
 		toolbar.add(copyClip_button);
 
 		// tabbing for several ImageMap projects at the same time
@@ -232,7 +248,6 @@ public class ImageMap extends JFrame implements ActionListener {
 		projects.setTabPlacement(SwingConstants.BOTTOM);
 		projects.setUI(new CustomTabbedPaneUI());
 		projects.addChangeListener(new ChangeListener() {
-
 			@Override
 			public void stateChanged(ChangeEvent e) {
 				if (!empty && projects.getTabCount() != 0) {
@@ -595,10 +610,26 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * 
+	 * @return the undoButton
+	 */
+	public JButton getUndoButton() {
+		return undoButton;
+	}
+
+	/**
 	 * @return the redo
 	 */
 	public JMenuItem getRedo() {
 		return redo;
+	}
+	
+	/**
+	 * 
+	 * @return the redoButton
+	 */
+	public JButton getRedoButton() {
+		return redoButton;
 	}
 
 	/**
@@ -1064,7 +1095,7 @@ public class ImageMap extends JFrame implements ActionListener {
 					currentProject = (ImageMapProject) projects.getSelectedComponent();
 				}
 			}
-			
+
 			/**
 			 * reset ImageMapEditor to initial status after closing of last tab
 			 */

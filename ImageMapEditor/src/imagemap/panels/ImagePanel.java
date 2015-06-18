@@ -91,6 +91,8 @@ public class ImagePanel extends JPanel {
 		shapeList.add(shape);
 		addBlankElement(shape);
 		undoStack.push(new AddStackAction(AbstractStackAction.ADD, shape.clone()));
+		frame.getUndo().setEnabled(true);
+		frame.getUndoButton().setEnabled(true);
 		currentShape = shape;
 		upRevRep();
 	}
@@ -577,17 +579,29 @@ public class ImagePanel extends JPanel {
 	 * update tooltips
 	 */
 	private void updateTooltips() {
+		JMenuItem tmp = frame.getUndo();
+		JMenuItem tmp1 = frame.getRedo();
+		JButton tmp2 = frame.getUndoButton();
+		JButton tmp3 = frame.getRedoButton();
 		// undo part
 		if (!undoStack.isEmpty()) {
-			frame.getUndo().setToolTipText(undoStack.peek().getUndoDescription());
-		} else {
-			frame.getUndo().setToolTipText("Nothing to undo");
+			tmp.setToolTipText(undoStack.peek().getUndoDescription());
+			tmp.setEnabled(true);
+			tmp2.setEnabled(true);
+		} else {			
+			tmp.setToolTipText("Nothing to undo");
+			tmp.setEnabled(false);
+			tmp2.setEnabled(false);
 		}
 		// redo part
 		if (!redoStack.isEmpty()) {
-			frame.getRedo().setToolTipText(redoStack.peek().getRedoDescription());
+			tmp1.setToolTipText(redoStack.peek().getRedoDescription());
+			tmp1.setEnabled(true);
+			tmp3.setEnabled(true);
 		} else {
-			frame.getRedo().setToolTipText("Nothing to redo");
+			tmp1.setToolTipText("Nothing to redo");
+			tmp1.setEnabled(false);
+			tmp3.setEnabled(false);
 		}
 	}
 
