@@ -501,16 +501,6 @@ public class ImageMap extends JFrame implements ActionListener {
 	} // end of doSave()
 
 	/**
-	 * edit given shape (either by right-click or by end of editing of a shape)
-	 * 
-	 * @param s
-	 */
-	private void doEdit(AbstractShape s) {
-		DetailEditor de = new DetailEditor(s, currentProject.getImagePanel().getDoc(), this);
-		de.setVisible(true);
-	} // end of doEdit(Shape s)
-
-	/**
 	 * change look and feel of program
 	 * 
 	 * @param name
@@ -776,7 +766,7 @@ public class ImageMap extends JFrame implements ActionListener {
 				}
 			} else if (e.getClickCount() == 2) {
 				if (currentProject.getImagePanel().isInside(e.getPoint())) {
-					doEdit(currentProject.getImagePanel().whichShape(e.getPoint()));
+					currentProject.getImagePanel().doEdit(e.getPoint());
 				}
 			}
 		}
@@ -823,7 +813,7 @@ public class ImageMap extends JFrame implements ActionListener {
 				edit.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						doEdit(s);
+						currentProject.getImagePanel().doEdit(p);
 					}
 				});
 				JMenuItem copy = new JMenuItem("Copy");

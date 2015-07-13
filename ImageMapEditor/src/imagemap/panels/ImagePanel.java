@@ -568,7 +568,20 @@ public class ImagePanel extends JPanel {
 			upRevRep();
 		}
 	}
+	
+	/**
+	 * edit given shape (either by right-click or by end of editing of a shape)
+	 * 
+	 * @param s
+	 */
+	public void doEdit(Point p) {
+		DetailEditor de = new DetailEditor(whichShape(p), doc, frame);
+		de.setVisible(true);
+	} // end of doEdit(Shape s)
 
+	/**
+	 * auxilliary method to keep up with updating and revalidating the panel's display
+	 */
 	private void upRevRep() {
 		updateTooltips();
 		revalidate();
