@@ -188,17 +188,20 @@ public class ImagePanel extends JPanel {
 	 *            point which is inside of a shape
 	 * @return shape the point is inside of
 	 */
-	public AbstractShape whichShape(Point p) {
+	public AbstractShape whichShape(Point p, int id) {
+		AbstractShape tmp = null;
 		if (isInside(p)) {
 			for (AbstractShape shape : shapeList) {
 				if (shape.contains((int) p.getX(), (int) p.getY())) {
-					return shape;
+					if (id == shape.getId()) {
+						return shape;
+					} else if (tmp == null) {
+						tmp = shape;
+					}
 				}
 			}
-			return null;
-		} else {
-			return null;
-		}
+		} 
+		return tmp;
 	}
 
 	/**
@@ -436,7 +439,7 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
-	 * undo the last action
+	 * undo the last action, undo methods depend on type of action
 	 */
 	public void doUndo() {
 		if (!undoStack.isEmpty()) {
@@ -517,7 +520,7 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
-	 * redo the last undo
+	 * redo the last undo, redo methods depend on type of action
 	 */
 	public void doRedo() {
 		if (!redoStack.isEmpty()) {
@@ -575,7 +578,7 @@ public class ImagePanel extends JPanel {
 	 * @param s
 	 */
 	public void doEdit(Point p) {
-		DetailEditor de = new DetailEditor(whichShape(p), doc, frame);
+		DetailEditor de = new DetailEditor(whichShape(p, 0), doc, frame);
 		de.setVisible(true);
 	} // end of doEdit(Shape s)
 
@@ -690,6 +693,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter for Image
+	 * 
 	 * @return the img
 	 */
 	public Image getImg() {
@@ -697,6 +702,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Setter for Image
+	 * 
 	 * @param img
 	 *            the img to set
 	 */
@@ -708,6 +715,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter for ShapeList
+	 * 
 	 * @return the shapeList
 	 */
 	public Vector<AbstractShape> getShapeList() {
@@ -715,6 +724,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Setter for current Shape
+	 * 
 	 * @param currentShape
 	 *            the currentShape to set
 	 */
@@ -724,6 +735,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter for currently dragged shape
+	 * 
 	 * @return the draggedShape
 	 */
 	public AbstractShape getDraggedShape() {
@@ -731,6 +744,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Setter for currently dragged shape
+	 * 
 	 * @param draggedShape
 	 *            the draggedShape to set
 	 */
@@ -740,6 +755,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter for ImagePath
+	 * 
 	 * @return the imagePath
 	 */
 	public String getImagePath() {
@@ -747,6 +764,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Setter for ImagePath
+	 * 
 	 * @param imagePath
 	 *            the imagePath to set
 	 */
@@ -755,6 +774,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter for save path of project
+	 * 
 	 * @return the savePath
 	 */
 	public String getSavePath() {
@@ -762,6 +783,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Setter for SavePath of current project
+	 * 
 	 * @param savePath
 	 *            the savePath to set
 	 */
@@ -770,6 +793,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter for HTML Document of project
+	 * 
 	 * @return the doc
 	 */
 	public CustomHTMLDoc getDoc() {
@@ -777,6 +802,7 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter whether project progress is currently saved
 	 * 
 	 * @return whether panel has been saved yet
 	 */
@@ -785,6 +811,7 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Getter whether the panel is currently being edited
 	 * 
 	 * @return whether panel is currently being edited
 	 */
@@ -793,6 +820,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Setter for saved status
+	 * 
 	 * @param saved
 	 *            the saved state to set
 	 */
@@ -801,6 +830,8 @@ public class ImagePanel extends JPanel {
 	}
 
 	/**
+	 * Setter for current editing status
+	 * 
 	 * @param editing
 	 *            the editing state to set
 	 */

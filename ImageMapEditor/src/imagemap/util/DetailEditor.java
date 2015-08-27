@@ -28,6 +28,8 @@ public class DetailEditor extends JDialog {
 	private CustomHTMLDoc doc;
 
 	/**
+	 * constructor for DetailEditor
+	 * 
 	 * @throws HeadlessException
 	 */
 	public DetailEditor(AbstractShape s, CustomHTMLDoc doc, JFrame owner) throws HeadlessException {
@@ -123,7 +125,6 @@ public class DetailEditor extends JDialog {
 	 */
 	private void doSave() {
 		shape.setAlt(alt.getText());
-		System.out.println(shape.getId());
 		doc.getMap()
 		.getSubElements()
 		.get(shape.getId())

@@ -49,7 +49,7 @@ public class PreviewPanel extends JEditorPane implements MouseMotionListener {
 		if (panel.isInside(e.getPoint())) {
 			if (popupTt != null)
 				popupTt.hide();
-			String t = panel.whichShape(e.getPoint()).getTooltip();
+			String t = panel.whichShape(e.getPoint(), 0).getTooltip();
 			setToolTipText(t);
 			tt.setTipText(this.getToolTipText());
 			Cursor cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);

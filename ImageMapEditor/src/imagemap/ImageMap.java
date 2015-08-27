@@ -56,7 +56,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	private boolean empty = true;
 	private boolean inside = false;
 	private boolean dragging = false;
-	private boolean moving = false;
+	private AbstractShape movingShape = null;
 	private boolean resizing = false;
 	private boolean fastClose = false;
 
@@ -81,7 +81,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	} // end of main method
 
 	/**
-	 * create GUI
+	 * create GUI (initializations and building of GUI)
 	 */
 	private void createGUI() {
 		// general declarations and instantiations
@@ -288,7 +288,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	} // end of createGUI()
 
 	/**
-	 * action performed; switching over sources' names
+	 * action performed; switching over source's name
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -538,6 +538,8 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * handling of clicking a toggleButton
+	 * 
 	 * @param type
 	 */
 	private void doToggle(int type) {
@@ -562,6 +564,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * auxiliary methid to create the imageIcons for the toggleButtons
 	 * 
 	 * @param path
 	 * @param description
@@ -581,6 +584,12 @@ public class ImageMap extends JFrame implements ActionListener {
 		}
 	}
 
+	/**
+	 * Creates a new tab with a new ImageMap project
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
 	private void addProject(File file) throws IOException {
 		String name = JOptionPane.showInputDialog(this, "How do you want to name the new project?");
 		ImageMapProject proj = new ImageMapProject(name, file, this);
@@ -616,14 +625,17 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 	
 	/**
+	 * private getter for lock status of resize/move of shapes
 	 * 
-	 * @return lock status
+	 * @return lock status of resize/move of shapes
 	 */
 	private int getLock() {
 		return lock;
 	}
 
 	/**
+	 * Getter for enabling undo button in drop down menu and changing it's description in window
+	 * 
 	 * @return the undo
 	 */
 	public JMenuItem getUndo() {
@@ -631,6 +643,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * Getter for enabling undo button and changing it's description in window
 	 * 
 	 * @return the undoButton
 	 */
@@ -639,6 +652,8 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * Getter for enabling redo button in drop down menu and changing it's description in window
+	 * 
 	 * @return the redo
 	 */
 	public JMenuItem getRedo() {
@@ -646,6 +661,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 	
 	/**
+	 * Getter for enabling redo button and changing it's description in window
 	 * 
 	 * @return the redoButton
 	 */
@@ -657,7 +673,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	 * 
 	 * @return the mouse controller
 	 */
-	public MouseController getMc() {
+	public static MouseController getMc() {
 		return mc;
 	}
 
@@ -665,11 +681,12 @@ public class ImageMap extends JFrame implements ActionListener {
 	 * 
 	 * @return the mouse motion controller
 	 */
-	public MouseMotionController getMmc() {
+	public static MouseMotionController getMmc() {
 		return mmc;
 	}
 
 	/**
+	 * Getter for button to enable copying to clipboard
 	 * 
 	 * @return copyclip button
 	 */
@@ -678,6 +695,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * Getter for mouse position to show in lower right corner
 	 * 
 	 * @return mouse_position
 	 */
@@ -686,6 +704,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	}
 
 	/**
+	 * MouseController class to implement all mouse-action related functions
 	 * 
 	 * @author Niklas Miroll
 	 *
@@ -706,7 +725,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		} // end of mouseReleased(MouseEvent e)
 
 		/**
-		 * mouse pressed EventHandler
+		 * mousePressed EventHandler
 		 */
 		@Override
 		public void mousePressed(MouseEvent e) {
@@ -727,7 +746,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		private void handleLeftClick(MouseEvent e) {
 			if (dragging) {
 				handleDrag();
-			} else if (moving) {
+			} else if (movingShape != null) {
 				handleMoveAndResize(AbstractStackAction.MOVE);
 			} else if (resizing) {
 				handleMoveAndResize(AbstractStackAction.RESIZE);
@@ -743,7 +762,7 @@ public class ImageMap extends JFrame implements ActionListener {
 			endShape = currentProject.getImagePanel().getDraggedShape();
 			currentProject.getImagePanel().setDraggedShape(null);
 			dragging = false;
-			moving = false;
+			movingShape = null;
 			resizing = false;
 			temp = null;
 			currentProject.getImagePanel().addShape(endShape);
@@ -756,7 +775,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		private void handleMoveAndResize(int actionType) {
 			dragging = false;
-			moving = false;
+			movingShape = null;
 			resizing = false;
 			currentProject.getImagePanel().endEditing(actionType, startShape, endShape);
 			currentProject.getImagePanel().getDoc().getMap().getSubElements().get(startId).updateCoords(endShape);
@@ -766,8 +785,9 @@ public class ImageMap extends JFrame implements ActionListener {
 		}
 
 		/**
+		 * handle regular left click release
+		 * 
 		 * @param e
-		 *            passed mouse event
 		 */
 		private void handleRegular(MouseEvent e) {
 			int type = Integer.parseInt(group.getSelection().getActionCommand());
@@ -793,8 +813,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		private void doMouse(MouseEvent e) {
 			if (e.getClickCount() == 1) {
 				if (currentProject.getImagePanel().isInside(e.getPoint())) {
-					currentProject.getImagePanel().setCurrentShape(
-							currentProject.getImagePanel().whichShape(e.getPoint()));
+					currentProject.getImagePanel().setCurrentShape(currentProject.getImagePanel().whichShape(e.getPoint(), 0));
 				}
 			} else if (e.getClickCount() == 2) {
 				if (currentProject.getImagePanel().isInside(e.getPoint())) {
@@ -836,7 +855,7 @@ public class ImageMap extends JFrame implements ActionListener {
 			Point p = e.getPoint();
 			boolean isInside = currentProject.getImagePanel().isInside(p);
 			if (isInside) {
-				AbstractShape s = currentProject.getImagePanel().whichShape(p);
+				AbstractShape s = currentProject.getImagePanel().whichShape(p, 0);
 				// open right-click-menu with options: edit information,
 				// copy,
 				// cut, delete
@@ -895,13 +914,14 @@ public class ImageMap extends JFrame implements ActionListener {
 	} // end of inner class MouseController
 
 	/**
+	 * handles mouseMotion related functions
 	 * 
 	 * @author Niklas Miroll
 	 *
 	 */
 	private class MouseMotionController implements MouseMotionListener {
 		/**
-		 * mouse dragged function, handles different functions like moving and resizing of shapes
+		 * mouse dragged function, handles different functions like moving, resizing and dragging of shapes
 		 */
 		@Override
 		public void mouseDragged(MouseEvent e) {
@@ -919,12 +939,15 @@ public class ImageMap extends JFrame implements ActionListener {
 								break lock;
 							}
 						}						
-						AbstractShape tmp = currentProject.getImagePanel().whichShape(p);
+						AbstractShape tmp;
 						if (startShape == null) {
+							tmp = currentProject.getImagePanel().whichShape(p, 0);
 							startShape = tmp.clone();
 							startId = 0 + tmp.getId();
+						} else {
+							tmp =  currentProject.getImagePanel().whichShape(p, movingShape.getId());
 						}
-						moving = true;
+						movingShape = tmp;
 						int xdir = (int) p.getX() - (int) temp.getX();
 						int ydir = (int) p.getY() - (int) temp.getY();
 						temp = p;
@@ -1032,6 +1055,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	} // end of inner class MouseMotionController
 
 	/**
+	 * handles closing action of window to prevent data loss
 	 * 
 	 * @author Niklas Miroll
 	 *
@@ -1051,15 +1075,16 @@ public class ImageMap extends JFrame implements ActionListener {
 	} // end of inner class WindowController
 
 	/**
+	 * custom tabbed UI to implement browser-like cross in tab to close tabs
 	 * 
-	 * @author Niklas Miroll
+	 * @author Joris Van den Bogaert, Niklas Miroll
 	 *
 	 */
 	private class CustomTabbedPaneUI extends MetalTabbedPaneUI {
 		private Rectangle xRect;
 
 		/**
-		 * installLIsteners method
+		 * installListeners method
 		 */
 		protected void installListeners() {
 			super.installListeners();
@@ -1142,7 +1167,7 @@ public class ImageMap extends JFrame implements ActionListener {
 				empty = true;
 				inside = false;
 				dragging = false;
-				moving = false;
+				movingShape = null;
 				resizing = false;
 				fastClose = false;
 				temp = null;

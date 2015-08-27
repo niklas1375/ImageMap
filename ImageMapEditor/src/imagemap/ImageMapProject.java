@@ -213,11 +213,14 @@ public class ImageMapProject extends JTabbedPane implements ActionListener {
 	 * intialize listeners
 	 */
 	private void setListeners() {
-		imagePanel.addMouseListener(frame.getMc());
-		imagePanel.addMouseMotionListener(frame.getMmc());
+		imagePanel.addMouseListener(ImageMap.getMc());
+		imagePanel.addMouseMotionListener(ImageMap.getMmc());
 		// still missing most
 	}
 
+	/**
+	 * handle actions taken in project
+	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		String name = ((Component) e.getSource()).getName();
@@ -238,6 +241,7 @@ public class ImageMapProject extends JTabbedPane implements ActionListener {
 	}
 	
 	/**
+	 * Getter for name of project
 	 * 
 	 * @return name
 	 */
@@ -246,6 +250,7 @@ public class ImageMapProject extends JTabbedPane implements ActionListener {
 	}
 	
 	/**
+	 * Return whether the ruler is set to metric or not
 	 * 
 	 * @return isMetric
 	 */
@@ -254,6 +259,7 @@ public class ImageMapProject extends JTabbedPane implements ActionListener {
 	}
 
 	/**
+	 * Getter for HTML-Panel of project
 	 * 
 	 * @return HTML Panel
 	 */
@@ -262,6 +268,7 @@ public class ImageMapProject extends JTabbedPane implements ActionListener {
 	}
 	
 	/**
+	 * return x- and y-Rulers
 	 * 
 	 * @return Rulers
 	 */
