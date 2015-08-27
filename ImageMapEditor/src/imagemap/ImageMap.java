@@ -51,6 +51,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	private AbstractShape endShape;
 	private int current_toggle;
 	private int startId;
+	private int lock = 0;
 	private JFileChooser fc = new JFileChooser();
 	private boolean empty = true;
 	private boolean inside = false;
@@ -591,6 +592,36 @@ public class ImageMap extends JFrame implements ActionListener {
 		scale.setEnabled(true);
 		empty = false;
 	}
+	
+	/**
+	 * unlocks access to resize/move of shapes to avoid conflict
+	 */
+	private void unlock() {
+		lock = 0;
+	}
+	
+	/**
+	 * locks resize/move based on given id of locking method (1: resize; 2: move)
+	 * 
+	 * @param id
+	 * @return success of locking
+	 */
+	private boolean lock(int id) {
+		if (lock == 0 || lock == id) {
+			lock = id;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	/**
+	 * 
+	 * @return lock status
+	 */
+	private int getLock() {
+		return lock;
+	}
 
 	/**
 	 * @return the undo
@@ -731,6 +762,7 @@ public class ImageMap extends JFrame implements ActionListener {
 			currentProject.getImagePanel().getDoc().getMap().getSubElements().get(startId).updateCoords(endShape);
 			startShape = null;
 			endShape = null;
+			unlock();
 		}
 
 		/**
@@ -869,7 +901,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	 */
 	private class MouseMotionController implements MouseMotionListener {
 		/**
-		 * mouse dragged function
+		 * mouse dragged function, handles different functions like moving and resizing of shapes
 		 */
 		@Override
 		public void mouseDragged(MouseEvent e) {
@@ -878,7 +910,15 @@ public class ImageMap extends JFrame implements ActionListener {
 			setCursorStatus(p);
 			if (shape == null) {
 				if (inside) {
+					lock:
 					if (current_toggle == TYPE_MOUSE) {
+						if (getLock() == 1) {
+							break lock;
+						} else {
+							if (!lock(2)) {
+								break lock;
+							}
+						}						
 						AbstractShape tmp = currentProject.getImagePanel().whichShape(p);
 						if (startShape == null) {
 							startShape = tmp.clone();
@@ -902,7 +942,15 @@ public class ImageMap extends JFrame implements ActionListener {
 					}
 				}
 			} else {
+				lock:
 				if (current_toggle == TYPE_MOUSE) {
+					if (getLock() == 2) {
+						break lock;
+					} else {
+						if (!lock(1)) {
+							break lock;
+						}
+					}
 					if (startShape == null) {
 						startShape = shape.clone();
 						startId = 0 + shape.getId();

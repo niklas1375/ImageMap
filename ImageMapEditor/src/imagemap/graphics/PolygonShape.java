@@ -327,10 +327,12 @@ public class PolygonShape extends AbstractShape {
 		int[] xArray = poly.xpoints;
 		int[] yArray = poly.ypoints;
 		for (int i = 0; i < xArray.length; i++) {
-			html += xArray[i] + "," + yArray[i];
-			if (i != (xArray.length - 1)) {
-				html += ",";
-			}
+			if (poly.xpoints[i] != 0 || poly.ypoints[i] != 0) {
+				html += xArray[i] + "," + yArray[i];
+				if (i != (xArray.length - 1)) {
+					html += ",";
+				}
+			}			
 		}
 		return html;
 	}

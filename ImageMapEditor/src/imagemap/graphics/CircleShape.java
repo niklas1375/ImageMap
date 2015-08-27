@@ -29,7 +29,7 @@ public class CircleShape extends AbstractShape {
 		type = TYPE_CIRC;
 		circ_cent = p;
 		circ_r = r;
-		hashCode();
+		id = hashCode();
 	}
 
 	/**
