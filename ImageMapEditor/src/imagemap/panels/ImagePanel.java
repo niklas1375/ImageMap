@@ -581,6 +581,26 @@ public class ImagePanel extends JPanel {
 		DetailEditor de = new DetailEditor(whichShape(p, 0), doc, frame);
 		de.setVisible(true);
 	} // end of doEdit(Shape s)
+	
+	/**
+	 * move given shape to top of stack to make it "most visible"
+	 * 
+	 * @param s
+	 */
+	public void toTop(AbstractShape s) {
+		shapeList.remove(s);
+		shapeList.add(0, s);
+	}
+	
+	/**
+	 * move given shape to bottom of stack to make it "out of focus"
+	 * 
+	 * @param s
+	 */
+	public void toBottom(AbstractShape s) {
+		shapeList.remove(s);
+		shapeList.add(s);
+	}
 
 	/**
 	 * auxilliary method to keep up with updating and revalidating the panel's display

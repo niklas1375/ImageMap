@@ -891,7 +891,26 @@ public class ImageMap extends JFrame implements ActionListener {
 						currentProject.getImagePanel().doDelete(null);
 					}
 				});
+				JMenuItem moveTop = new JMenuItem("move to top");
+				moveTop.addActionListener(new ActionListener() {					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						currentProject.getImagePanel().setCurrentShape(s);
+						currentProject.getImagePanel().toTop(s);
+					}
+				});
+				JMenuItem moveBottom = new JMenuItem("move to bottom");
+				moveBottom.addActionListener(new ActionListener() {					
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						currentProject.getImagePanel().setCurrentShape(s);
+						currentProject.getImagePanel().toBottom(s);
+					}
+				});
 				popupout.add(edit);
+				popupout.addSeparator();
+				popupout.add(moveTop);
+				popupout.add(moveBottom);
 				popupout.addSeparator();
 				popupout.add(copy);
 				popupout.add(cut);
@@ -1119,7 +1138,9 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		public class MyMouseHandler extends MouseAdapter {
 			public void mousePressed(MouseEvent e) {
+				System.out.println("mouse event");
 				if (xRect.contains(e.getPoint())) {
+					System.out.println("inside rectangle");
 					int tabIndex = tabForCoordinate(projects, e.getX(), e.getY());
 					ImageMapProject proj = (ImageMapProject) projects.getComponentAt(tabIndex);
 					if (proj.getImagePanel().isEditing() || !proj.getImagePanel().isSaved()) {
