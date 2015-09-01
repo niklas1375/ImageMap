@@ -4,11 +4,9 @@
 package imagemap.util;
 
 import java.awt.Image;
-import java.util.HashMap;
-import java.util.Vector;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 /**
  * @author Niklas Miroll

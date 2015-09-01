@@ -3,6 +3,7 @@
  */
 package imagemap.util.action;
 
+
 /**
  * @author Niklas Miroll
  *

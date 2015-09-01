@@ -5,20 +5,16 @@ package imagemap;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 import imagemap.panels.*;
 import imagemap.util.Rule;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.StyleContext;
+import javax.swing.event.*;
+import javax.swing.text.*;
 
 /**
  * @author Niklas Miroll

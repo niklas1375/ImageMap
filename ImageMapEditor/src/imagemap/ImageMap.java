@@ -85,8 +85,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	 */
 	private void createGUI() {
 		// general declarations and instantiations
-		KeyStroke fastExit = KeyStroke.getKeyStroke('E', java.awt.event.InputEvent.CTRL_DOWN_MASK
-				| java.awt.event.InputEvent.SHIFT_DOWN_MASK);
+		KeyStroke fastExit = KeyStroke.getKeyStroke('E', KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK);
 		Action performWindowExit = new AbstractAction("FastExit") {
 			private static final long serialVersionUID = 1L;
 
@@ -110,7 +109,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		JMenuItem exit = new JMenuItem("Exit");
 		JMenuItem newMap = new JMenuItem("New");
 		shapeImport = new JMenuItem("Import shapes from HTML...");
-		JMenuItem save = new JMenuItem("Save");
+		JMenuItem saveHTML = new JMenuItem("Save HTML...");
 		undo = new JMenuItem("Undo");
 		redo = new JMenuItem("Redo");
 		JMenuItem copy = new JMenuItem("Copy");
@@ -133,9 +132,9 @@ public class ImageMap extends JFrame implements ActionListener {
 		shapeImport.setEnabled(false);
 		shapeImport.setToolTipText("Load image to import shapes from HTML");
 		shapeImport.setAccelerator(KeyStroke.getKeyStroke('I', menuShortcutKeyMask));
-		file.add(save).setAccelerator(KeyStroke.getKeyStroke('S', menuShortcutKeyMask));
-		save.addActionListener(this);
-		save.setName("save");
+		file.add(saveHTML).setAccelerator(KeyStroke.getKeyStroke('S', menuShortcutKeyMask));
+		saveHTML.addActionListener(this);
+		saveHTML.setName("saveHTML");
 		file.addSeparator();
 		file.add(exit).addActionListener(this);
 		exit.setName("exit");
@@ -298,10 +297,10 @@ public class ImageMap extends JFrame implements ActionListener {
 			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 			break;
 
-		case "save":
-			doSave();
+		case "saveHTML":
+			doSaveHTML();
 			break;
-
+			
 		case "new":
 			doNew();
 			break;
@@ -454,7 +453,7 @@ public class ImageMap extends JFrame implements ActionListener {
 	/**
 	 * save imagemap to html
 	 */
-	private void doSave() {
+	private void doSaveHTML() {
 		ImagePanel panel = null;
 		if (currentProject != null) {
 			panel = currentProject.getImagePanel();
@@ -497,10 +496,10 @@ public class ImageMap extends JFrame implements ActionListener {
 				} // end if (returnVal == JFileChooser.APPROVE_OPTION)
 			} // end if
 		} else {
-			JOptionPane.showMessageDialog(this, "There is nothing to save");
+			JOptionPane.showMessageDialog(this, "There is nothing to save.");
 		} // end if (img != null)
 	} // end of doSave()
-
+	
 	/**
 	 * change look and feel of program
 	 * 
@@ -1138,8 +1137,7 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		public class MyMouseHandler extends MouseAdapter {
 			public void mousePressed(MouseEvent e) {
-				System.out.println("mouse event");
-				if (xRect.contains(e.getPoint())) {
+				if (currentProject != null && xRect.contains(e.getPoint())) {
 					System.out.println("inside rectangle");
 					int tabIndex = tabForCoordinate(projects, e.getX(), e.getY());
 					ImageMapProject proj = (ImageMapProject) projects.getComponentAt(tabIndex);

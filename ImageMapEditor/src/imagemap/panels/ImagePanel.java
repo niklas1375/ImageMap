@@ -10,8 +10,7 @@ import imagemap.util.action.*;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
+import java.awt.image.*;
 import java.util.*;
 
 import javax.swing.*;

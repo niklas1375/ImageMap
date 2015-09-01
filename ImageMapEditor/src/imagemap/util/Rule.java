@@ -32,6 +32,7 @@
 package imagemap.util;
 
 import java.awt.*;
+
 import javax.swing.*;
 
 /* Rule.java is used by ScrollDemo.java. */
