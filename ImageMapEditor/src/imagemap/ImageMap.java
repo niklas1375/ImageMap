@@ -52,7 +52,8 @@ public class ImageMap extends JFrame implements ActionListener {
 	private int current_toggle;
 	private int startId;
 	private int lock = 0;
-	private JFileChooser fc = new JFileChooser();
+	private JFileChooser imageFc = new JFileChooser();
+	private JFileChooser htmlFc = new JFileChooser();
 	private boolean empty = true;
 	private boolean inside = false;
 	private boolean dragging = false;
@@ -99,6 +100,10 @@ public class ImageMap extends JFrame implements ActionListener {
 		mc = new ImageMap.MouseController();
 		mmc = new ImageMap.MouseMotionController();
 		currentProject = null;
+		FileNameExtensionFilter imageFilter = new FileNameExtensionFilter("Bilder (*.jpg, *.jpeg, *.gif, *.png, *.bmp)", "gif", "png", "jpg", "jpeg", "bmp");
+		imageFc.setFileFilter(imageFilter);
+		FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter("Web (*.html, *.htm)", "html", "htm");
+		htmlFc.setFileFilter(htmlFilter);
 
 		// menubar
 		JMenuBar menubar = new JMenuBar();
@@ -298,7 +303,7 @@ public class ImageMap extends JFrame implements ActionListener {
 			break;
 
 		case "saveHTML":
-			doSaveHTML();
+			doSaveHTML(false);
 			break;
 			
 		case "new":
@@ -434,11 +439,9 @@ public class ImageMap extends JFrame implements ActionListener {
 	 * open new image
 	 */
 	private void doNew() {
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("Bilder", "gif", "png", "jpg", "jpeg", "bmp");
-		fc.setFileFilter(filter);
-		int returnVal = fc.showOpenDialog(this);
+		int returnVal = imageFc.showOpenDialog(this);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File file = fc.getSelectedFile();
+			File file = imageFc.getSelectedFile();
 			try {
 				addProject(file);
 			} catch (Exception e) {
@@ -453,27 +456,25 @@ public class ImageMap extends JFrame implements ActionListener {
 	/**
 	 * save imagemap to html
 	 */
-	private void doSaveHTML() {
+	private void doSaveHTML(boolean rush) {
 		ImagePanel panel = null;
 		if (currentProject != null) {
 			panel = currentProject.getImagePanel();
 		}
 		if (panel != null) {
 			int retVal = JOptionPane.YES_OPTION;
-			if (panel.isEditing()) {
+			if (panel.isEditing() && !rush) {
 				retVal = JOptionPane.showConfirmDialog(this, "You are currently editing a shape. Do you want to "
 						+ "discard changes and save the finished shapes?");
 			}
 			if (retVal == JOptionPane.YES_OPTION) {
-				FileNameExtensionFilter filter = new FileNameExtensionFilter("Web", "html", "htm", "xhtml");
-				fc.setFileFilter(filter);
 				temp = null;
 				panel.setEditing(false);
 				String html = panel.getDoc().toString();
-				fc.setSelectedFile(new File("imagemap.html"));
-				int returnVal = fc.showSaveDialog(this);
+				htmlFc.setSelectedFile(new File("imagemap.html"));
+				int returnVal = htmlFc.showSaveDialog(this);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					File content = fc.getSelectedFile();
+					File content = htmlFc.getSelectedFile();
 					try {
 						FileOutputStream fos = new FileOutputStream(content);
 						BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
@@ -1142,16 +1143,17 @@ public class ImageMap extends JFrame implements ActionListener {
 		 */
 		public class MyMouseHandler extends MouseAdapter {
 			public void mousePressed(MouseEvent e) {
-				if (currentProject != null && xRect.contains(e.getPoint())) {
-					System.out.println("inside rectangle");
+				Point p = new Point(e.getPoint().x - 8, e.getPoint().y);
+				if (currentProject != null && xRect.contains(p)) {
 					int tabIndex = tabForCoordinate(projects, e.getX(), e.getY());
 					ImageMapProject proj = (ImageMapProject) projects.getComponentAt(tabIndex);
 					if (proj.getImagePanel().isEditing() || !proj.getImagePanel().isSaved()) {
 						int retVal = JOptionPane.showConfirmDialog(frame, "You are currently editing this project "
 								+ "or haven't saved it yet.\nDo you want to save before closing?", "Confirm action",
-								JOptionPane.OK_CANCEL_OPTION);
+								JOptionPane.YES_NO_CANCEL_OPTION);
 						switch (retVal) {
 						case JOptionPane.YES_OPTION:
+							doSaveHTML(true);
 							kill(tabIndex);
 							break;
 

@@ -65,7 +65,7 @@ public class ShapeImporter extends JDialog {
 		JPanel middle = new JPanel();
 		JPanel bottom = new JPanel();
 		JLabel instruction = new JLabel("Choose which Shapes to import.");
-		FileNameExtensionFilter filter = new FileNameExtensionFilter("Web", "html", "htm", "xhtml");
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("Web (*.html, *.htm)", "html", "htm");
 		fc.setFileFilter(filter);
 		int returnVal = fc.showOpenDialog(this);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {

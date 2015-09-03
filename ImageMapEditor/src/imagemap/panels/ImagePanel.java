@@ -37,7 +37,7 @@ public class ImagePanel extends JPanel {
 	private String imagePath;
 	private String savePath;
 	private CustomHTMLDoc doc;
-	private boolean saved = true;
+	private boolean saved = false;
 	private boolean editing = false;
 
 	/**
