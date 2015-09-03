@@ -948,30 +948,8 @@ public class ImageMap extends JFrame implements ActionListener {
 			setCursorStatus(p);
 			if (shape == null) {
 				if (inside) {
-					lock:
 					if (current_toggle == TYPE_MOUSE) {
-						if (getLock() == 1) {
-							break lock;
-						} else {
-							if (!lock(2)) {
-								break lock;
-							}
-						}						
-						AbstractShape tmp;
-						if (startShape == null) {
-							tmp = currentProject.getImagePanel().whichShape(p, 0);
-							startShape = tmp.clone();
-							startId = 0 + tmp.getId();
-						} else {
-							tmp =  currentProject.getImagePanel().whichShape(p, movingShape.getId());
-						}
-						movingShape = tmp;
-						int xdir = (int) p.getX() - (int) temp.getX();
-						int ydir = (int) p.getY() - (int) temp.getY();
-						temp = p;
-						tmp.move(xdir, ydir);
-						endShape = tmp.clone();
-						currentProject.getImagePanel().repaint();
+						move(p, !currentProject.getImagePanel().isInside(e.getPoint()));
 					}
 				} else {
 					if (current_toggle == AbstractShape.TYPE_RECT) {
@@ -983,27 +961,54 @@ public class ImageMap extends JFrame implements ActionListener {
 					}
 				}
 			} else {
-				lock:
 				if (current_toggle == TYPE_MOUSE) {
-					if (getLock() == 2) {
-						break lock;
-					} else {
-						if (!lock(1)) {
-							break lock;
+					if (getLock() != 2) {
+						if (lock(1)) {
+							if (startShape == null) {
+								startShape = shape.clone();
+								startId = 0 + shape.getId();
+							}
+							resizing = true;
+							int xdir = (int) e.getPoint().getX() - (int) temp.getX();
+							int ydir = (int) e.getPoint().getY() - (int) temp.getY();
+							temp = p;
+							shape.movePoint(p, xdir, ydir);
+							endShape = shape.clone();
+							currentProject.getImagePanel().repaint();
 						}
 					}
-					if (startShape == null) {
-						startShape = shape.clone();
-						startId = 0 + shape.getId();
-					}
-					resizing = true;
-					int xdir = (int) e.getPoint().getX() - (int) temp.getX();
-					int ydir = (int) e.getPoint().getY() - (int) temp.getY();
-					temp = p;
-					shape.movePoint(p, xdir, ydir);
-					endShape = shape.clone();
-					currentProject.getImagePanel().repaint();
 				}
+			}
+		}
+
+		/**
+		 * auxiliary method to handle moving
+		 * 
+		 * @param p
+		 */
+		private void move(Point p, boolean out) {
+			if (getLock() != 1) {
+				if (lock(2)) {
+					AbstractShape tmp;
+					if (startShape == null) {
+						tmp = currentProject.getImagePanel().whichShape(p, 0);
+						startShape = tmp.clone();
+						startId = 0 + tmp.getId();						
+					} else {
+						if (out) {
+							tmp = currentProject.getImagePanel().whichShape(movingShape);
+						} else {
+							tmp =  currentProject.getImagePanel().whichShape(p, movingShape.getId());
+						}						
+					}
+					movingShape = tmp;
+					int xdir = (int) p.getX() - (int) temp.getX();
+					int ydir = (int) p.getY() - (int) temp.getY();
+					temp = p;
+					tmp.move(xdir, ydir);
+					endShape = tmp.clone();
+					currentProject.getImagePanel().repaint();
+				}							
 			}
 		}
 

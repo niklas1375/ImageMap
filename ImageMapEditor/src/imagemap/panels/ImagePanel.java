@@ -202,6 +202,15 @@ public class ImagePanel extends JPanel {
 		} 
 		return tmp;
 	}
+	
+	/**
+	 * 
+	 * @param s
+	 * @returnshape instance out of shapeList
+	 */
+	public AbstractShape whichShape(AbstractShape s){
+		return shapeList.elementAt(getShapeIndex(s));
+	}
 
 	/**
 	 * empty imagePanel
@@ -582,6 +591,16 @@ public class ImagePanel extends JPanel {
 	} // end of doEdit(Shape s)
 	
 	/**
+	 * clear all shapes
+	 */
+	public void doClear() {
+		undoStack.push(new WipeStackAction(shapeList));
+		shapeList.clear();
+		doc.getMap().clearSubs();
+		upRevRep();
+	} // end of doClear()
+	
+	/**
 	 * move given shape to top of stack to make it "most visible"
 	 * 
 	 * @param s
@@ -638,16 +657,6 @@ public class ImagePanel extends JPanel {
 			tmp1.setEnabled(false);
 			tmp3.setEnabled(false);
 		}
-	}
-
-	/**
-	 * clear all shapes
-	 */
-	public void doClear() {
-		undoStack.push(new WipeStackAction(shapeList));
-		shapeList.clear();
-		doc.getMap().clearSubs();
-		upRevRep();
 	}
 
 	/**
