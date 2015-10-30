@@ -59,7 +59,7 @@ public class HelpFrame extends JFrame {
 		setUpTextArea(rect, "Rectangle", r);
 		String c = "To draw a circle click on the center of your desired circle and drag the radius.\nReleasing the mouse will finish it.";
 		setUpTextArea(circ, "Circle", c);
-		String p = "TO draw a polygon click every corner your polygon should have in the intended order.\nPressing escape or using a double click to set a point will finish it.";
+		String p = "To draw a polygon click every corner your polygon should have in the intended order.\nPressing escape or using a double click to set a point will finish it.";
 		setUpTextArea(poly, "Polygon", p);
 		general.add(rect);
 		general.add(circ);
