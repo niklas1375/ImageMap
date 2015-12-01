@@ -4,7 +4,7 @@ ImageMap Editor for university project
 
 ## Function
 
-The ImageMap Editor provides functionality to create HTML imagemaps using a graphic editor.
+The ImageMap Editor provides functionality to create HTML imagemaps using a tabbed graphic editor.
 Additonally it is possible to import shapes from existing HTML-Code.
 ImageMaps including images can be scaled to the users preference.
 
